@@ -1,26 +1,46 @@
 ﻿using FanControl.Plugins;
+using System;
 
 namespace FanControl.UsbTemp
 {
     internal class UsbTempPluginSensor : IPluginSensor
     {
-        private Thermometer thermometer_;
-        private float temp_measurement_;
+        private readonly UsbTempSensorConfig _config;
+        private ITempSensorDriver _thermometer;
+        private float _temp_measurement;
 
-        public UsbTempPluginSensor(Thermometer thermometer)
+        public string Id => _config.device_type + " - " + _config.device_id;
+
+        public string Name => _config.device_id;
+
+        public float? Value => _temp_measurement;
+
+        public UsbTempPluginSensor(UsbTempSensorConfig config)
         {
-            thermometer_ = thermometer;
+            _config = config;
+
+            switch(_config.device_type)
+            {
+                case "ds18b20":
+                    _thermometer = new Ds18b20Thermometer();
+                    break;
+                default:
+                    throw new Exception("Invalid device type");
+            }
         }
 
-        public string Id => "UsbTemp" + thermometer_.name;
+        public void Open()
+        {
+            _thermometer.Open(_config.device_id);
+        }
 
-        public string Name => thermometer_.name;
-
-        public float? Value => temp_measurement_;
-
+        public void Close()
+        {
+            _thermometer.Close();
+        }
         public void Update()
         {
-            temp_measurement_ = thermometer_.Temperature();
+            _temp_measurement = _thermometer.Temperature();
         }
     }
 }
