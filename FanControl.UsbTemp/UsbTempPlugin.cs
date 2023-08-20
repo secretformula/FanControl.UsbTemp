@@ -38,9 +38,9 @@ namespace FanControl.UsbTemp
                     _sensors.Add(new UsbTempPluginSensor(sensor_port));
                 }
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
-                var error_message = $"Error: Could not parse configuration for the FanControl.UsbTemp plugin at {config_json_path}. Please edit it to be valid and restart FanControl. You can delete {config_json_path} and restart FanControl to get back the default config.";
+                var error_message = $"Error: Could not parse configuration for the FanControl.UsbTemp plugin at {config_json_path}. Please edit it to be valid and restart FanControl.";
                 _logger.Log(LOG_PREFIX + error_message);
                 _logger.Log(LOG_PREFIX + "Not loading any FanControl.UsbTemp sensors.");
                 _logger.Log(LOG_PREFIX + $"Parsing exception hint: {e.Message}" + Environment.NewLine + e.StackTrace);
@@ -61,6 +61,7 @@ namespace FanControl.UsbTemp
             foreach (UsbTempPluginSensor sensor_port in _sensors)
             {
                 sensor_port.Open();
+                container.TempSensors.Add(sensor_port);
             }
         }
     }

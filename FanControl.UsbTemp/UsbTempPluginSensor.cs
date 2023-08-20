@@ -9,7 +9,7 @@ namespace FanControl.UsbTemp
         private ITempSensorDriver _thermometer;
         private float _temp_measurement;
 
-        public string Id => _config.device_type + " - " + _config.device_id;
+        public string Id => _config.device_type + _config.device_id;
 
         public string Name => _config.device_id;
 
