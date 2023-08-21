@@ -1,5 +1,5 @@
 # FanControl.UsbTemp
-[![Download](https://img.shields.io/badge/Download-Plugin-green.svg?style=flat&logo=download)](https://github.com/Rem0o/FanControl.HWInfo/releases/)
+[![Download](https://img.shields.io/badge/Download-Plugin-green.svg?style=flat&logo=download)](https://github.com/secretformula/FanControl.UsbTemp/releases)
 
 Plugin for [FanControl](https://github.com/Rem0o/FanControl.Releases) that provides support for USB/serial based temperature probes. Initial support provides for DS18B20 1–wire sensor connected via USB serial bridge as found in [this product](http://usbtemp.com/). Support for other temperature probes may be added in the future.
 
