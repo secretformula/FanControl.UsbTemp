@@ -8,6 +8,8 @@ namespace FanControl.UsbTemp
 {
     internal interface ITempSensorDriver
     {
+        bool IsOpen { get; }
+
         void Open(string device_id);
 
         void Close();
