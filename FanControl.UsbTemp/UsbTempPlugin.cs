@@ -6,7 +6,7 @@ using System;
 
 namespace FanControl.UsbTemp
 {
-    internal class UsbTempPlugin : IPlugin
+    public class UsbTempPlugin : IPlugin2
     {
         public static readonly string LOG_PREFIX = "[FanControl.UsbTemp] ";
         public string Name => "USB Temp";
@@ -22,11 +22,29 @@ namespace FanControl.UsbTemp
             _sensors = new List<UsbTempPluginSensor>();
         }
 
+        // FanControl's working directory is not its install folder when it is started by a
+        // scheduled task, at boot, or as a service. Look next to FanControl.exe first.
+        private static string FindConfigPath()
+        {
+            var candidates = new[]
+            {
+                Path.Combine(AppContext.BaseDirectory, "Configurations", "FanControl.UsbTemp.json"),
+                Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "FanControl.UsbTemp.json"),
+            };
+            foreach (var path in candidates)
+            {
+                if (File.Exists(path)) return path;
+            }
+            return candidates[0];
+        }
+
         public void Initialize()
         {
-            string cwd_path = Directory.GetCurrentDirectory();
-            var config_directory_path = Path.Combine(cwd_path, "Configurations");
-            var config_json_path = Path.Combine(config_directory_path, "FanControl.UsbTemp.json");
+            // FanControl can call Initialize again after a refresh; start from a clean list.
+            Close();
+            _sensors.Clear();
+
+            var config_json_path = FindConfigPath();
 
             try
             {
@@ -35,7 +53,7 @@ namespace FanControl.UsbTemp
 
                 foreach (UsbTempSensorConfig sensor_port in tempSensorConfig)
                 {
-                    _sensors.Add(new UsbTempPluginSensor(sensor_port));
+                    _sensors.Add(new UsbTempPluginSensor(sensor_port, _logger));
                 }
             }
             catch (Exception e)
@@ -44,7 +62,7 @@ namespace FanControl.UsbTemp
                 _logger.Log(LOG_PREFIX + error_message);
                 _logger.Log(LOG_PREFIX + "Not loading any FanControl.UsbTemp sensors.");
                 _logger.Log(LOG_PREFIX + $"Parsing exception hint: {e.Message}" + Environment.NewLine + e.StackTrace);
-                _dialog.ShowMessageDialog(error_message);
+                _dialog?.ShowMessageDialog(error_message);
             }
         }
 
@@ -55,14 +73,21 @@ namespace FanControl.UsbTemp
                 sensor_port.Close();
             }
         }
-        
+
         public void Load(IPluginSensorsContainer container)
         {
             foreach (UsbTempPluginSensor sensor_port in _sensors)
             {
+                // Starts a background reader; never throws, so one bad probe can't stop FanControl.
                 sensor_port.Open();
                 container.TempSensors.Add(sensor_port);
             }
+        }
+
+        // Called once per FanControl update cycle. Sensors read on their own threads,
+        // so there is nothing to do here.
+        public void Update()
+        {
         }
     }
 }

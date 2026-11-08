@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO.Ports;
-using System.Xml.Linq;
 
 namespace FanControl.UsbTemp
 {
@@ -51,11 +50,16 @@ namespace FanControl.UsbTemp
 
             buf = new byte[1];
 
+            serial_port.DiscardInBuffer();
+
             wbuff = 0xf0;
             buf[0] = wbuff;
             serial_port.Write(buf, 0, 1);
 
-            serial_port.Read(buf, 0, 1);
+            if (serial_port.Read(buf, 0, 1) != 1)
+            {
+                throw new ThermometerException("No reset response!");
+            }
             rbuff = buf[0];
             rv = (rbuff == 0x00 || rbuff == 0xf0) ? fail : ok;
 
@@ -83,6 +87,10 @@ namespace FanControl.UsbTemp
             while (remaining > 0)
             {
                 rbytes = serial_port.Read(buf, 0, remaining);
+                if (rbytes <= 0)
+                {
+                    throw new ThermometerException("Serial read returned no data!");
+                }
                 for (i = 0; i < rbytes; i++)
                 {
                     rbuff >>= 1;
@@ -122,11 +130,23 @@ namespace FanControl.UsbTemp
             serial_port.WriteTimeout = 500;
 
             serial_port.Open();
+            serial_port.DiscardInBuffer();
+            serial_port.DiscardOutBuffer();
         }
+
+        public bool IsOpen => serial_port != null && serial_port.IsOpen;
 
         public void Close()
         {
-            serial_port.Close();
+            var port = serial_port;
+            serial_port = null;
+            if (port == null)
+            {
+                return;
+            }
+            // Closing a port whose adapter was unplugged can throw; the handle is gone either way.
+            try { port.Close(); } catch { }
+            try { port.Dispose(); } catch { }
         }
 
         public float Temperature()
